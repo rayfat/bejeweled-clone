@@ -3,7 +3,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.util.Random;
 
-public class Bejeweled implements ActionListener
+public class OldBejeweled implements ActionListener
 {
 	private int coord1[] = new int[2];
 	private int coord2[] = new int[2];
@@ -19,7 +19,7 @@ public class Bejeweled implements ActionListener
 
 	private JButton jewel[][] = new JButton[ROW][COL];
 
-	public Bejeweled()
+	public OldBejeweled()
 	{
 		//Set up window
 		JFrame frame = new JFrame("Bejeweled");
@@ -428,6 +428,6 @@ public class Bejeweled implements ActionListener
 
 	public static void main(String args[])
 	{
-		Bejeweled app = new Bejeweled();
+		OldBejeweled app = new OldBejeweled();
 	}
 }
