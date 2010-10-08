@@ -1,0 +1,24 @@
+****Old Bejeweled
+Original version of the game I created while 
+I was still learning Java. The code is nothing short of 
+spaghetti code, but I will keep it in the repo as a 
+reminder of how much of a newbie I was, and as an example 
+of how not to write code.
+
+1)Compile
+javac OldBejeweled.java
+
+2)Run 
+java OldBejeweled.java
+
+
+**Improved Bejeweled Game 
+"Re-implementation" of original game using a better
+desing and with more features.
+
+1)Compile
+javac Bejeweled.java
+
+2)Run 
+java Bejeweled.java
+
