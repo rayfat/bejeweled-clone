@@ -9,6 +9,23 @@ enum Piece
 	WHITE, GREEN, PURPLE, YELLOW
 }
 
+enum EventType
+{
+	PIECE_MOVED, PIECE_DELETED
+}
+
+class BejeweledEvent
+{
+	public EventType type;
+	public Position piece;
+	
+	public BejeweledEvent(EventType type, Position piece) 
+	{
+		this.type = type;
+		this.piece = piece;
+	}
+}
+
 class Position
 {
 	public int row;
@@ -68,6 +85,12 @@ public class BejeweledBoard extends Observable
 		return board[row][column];
 	}
 	
+	public void setPieceAt(int row, int column, Piece piece)
+	{
+		board[row][column] = piece;
+		updatePieceAt(EventType.PIECE_MOVED, row, column);
+	}
+
 	public void swapPieces(int srcX, int srcY, int dstX, int dstY)
 	{
 		Piece firstPiece = getPieceAt(srcX, srcY);
@@ -77,10 +100,18 @@ public class BejeweledBoard extends Observable
 		setPieceAt(dstX, dstY, firstPiece);
 	}
 	
-	public void setPieceAt(int row, int column, Piece piece)
+	public void removePieces(List<Position> chain)
 	{
-		board[row][column] = piece;
-		updatePieceAt(row, column);
+		for(Position p : chain)
+		{
+			setPieceAt(p.row, p.column, Piece.BLANK);
+			updatePieceAt(EventType.PIECE_DELETED, p.row, p.column);
+		}
+		
+		for(Position p : chain)
+		{
+			fillBlankAt(p.row, p.column);
+		}		
 	}
 	
 	public void removePieceAt(int row, int column)
@@ -99,6 +130,7 @@ public class BejeweledBoard extends Observable
 		else
 		{
 			Piece topPiece = getPieceAt(row - 1, column);
+			setPieceAt(row - 1, column, Piece.BLANK);
 			setPieceAt(row, column, topPiece); 
 			removePieceAt(row - 1, column);
 		}
@@ -128,10 +160,12 @@ public class BejeweledBoard extends Observable
 		return jewels;
 	}
 	
-	private void updatePieceAt(int row, int column)
+	private void updatePieceAt(EventType type, int row, int column)
 	{
 		Position piece = new Position(row, column);
+		BejeweledEvent event = new BejeweledEvent(type, piece);
+		
 		setChanged();
-		notifyObservers(piece);
+		notifyObservers(event);
 	}
 }

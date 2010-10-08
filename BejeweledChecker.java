@@ -28,24 +28,28 @@ public class BejeweledChecker
 			   (deltaX == 1 && deltaY == 0);
 	}
 	
-	public void processRow(int row)
+	public boolean processRow(int row)
 	{
 		List<Position> chain = findChainInRow(row);
 		
 		if(!chain.isEmpty())
 		{
-			deletePieces(chain);
+			board.removePieces(chain);
 		}
+
+		return !chain.isEmpty();
 	}
 	
-	public void processColumn(int column)
+	public boolean processColumn(int column)
 	{
 		List<Position> chain = findChainInColumn(column);
 
 		if(!chain.isEmpty())
 		{
-			deletePieces(chain);
+			board.removePieces(chain);
 		}
+		
+		return !chain.isEmpty();
 	}
 	
 	private List<Position> findChainInRow(int row)
@@ -118,11 +122,24 @@ public class BejeweledChecker
 		return chain;		
 	}
 	
-	private void deletePieces(List<Position> pieces)
+	public void processBoard()
 	{
-		for(Position p : pieces)
+		boolean piecesRemoved = false;
+		
+		do
 		{
-			board.removePieceAt(p.row, p.column);
+			piecesRemoved = false;
+			
+			for(int row = 0; row < board.totalRows; row++)
+			{
+				piecesRemoved = piecesRemoved || processRow(row);
+			}
+	
+			for(int column = 0; column < board.totalColumns; column++)
+			{
+				piecesRemoved = piecesRemoved || processColumn(column);
+			}
 		}
+		while(piecesRemoved);
 	}
 }

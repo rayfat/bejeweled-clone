@@ -6,8 +6,9 @@ import java.awt.event.ActionListener;
 import java.util.Observable;
 import java.util.Observer;
 
+import javax.swing.BorderFactory;
 import javax.swing.JButton;
-import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 
 public class BejeweledPanel extends JPanel implements Observer
@@ -18,28 +19,61 @@ public class BejeweledPanel extends JPanel implements Observer
 	private BejeweledChecker checker;
 	private Position firstClick;
 	private JButton[][] buttons;
+	private JLabel pointsLabel;
+	private int points;
 	
 	public BejeweledPanel(int rows, int columns) 
 	{
 		createNewBoard(rows, columns);
 		createUI();
-		refreshUI();		
+		refreshUI();
 	}
 	
 	private void createUI()
 	{
 		JPanel boardPanel = createBoardPanel();
+		JPanel bottomPanel = createBottomPanel();
 		
 		BorderLayout mainLayout = new BorderLayout();
 		setLayout(mainLayout);
 		add(boardPanel, BorderLayout.CENTER);
+		add(bottomPanel,BorderLayout.SOUTH);
+	}
+	
+	private JPanel createBottomPanel()
+	{
+		this.pointsLabel = new JLabel("Points:");
+		
+		JButton newGame = new JButton("New Game");
+		newGame.addActionListener(new ActionListener() 
+		{
+			public void actionPerformed(ActionEvent e) 
+			{
+				createNewBoard(board.totalRows, board.totalColumns);
+				refreshUI();
+			}
+		});
+		
+		BorderLayout layout = new BorderLayout();
+		JPanel bottomPanel = new JPanel(layout);
+		bottomPanel.add(pointsLabel, BorderLayout.WEST);
+		bottomPanel.add(newGame, BorderLayout.EAST);
+		bottomPanel.setBorder(BorderFactory.createEmptyBorder(5,5,5,5));
+		return bottomPanel;
 	}
 	
 	public void createNewBoard(int rows, int columns)
 	{
 		this.board = new BejeweledBoard(rows, columns);
 		this.checker = new BejeweledChecker(board);
+		checker.processBoard();
 		board.addObserver(this);
+		this.points = 0;
+	}
+	
+	private void updatePoints()
+	{
+		pointsLabel.setText("Points: " + points);
 	}
 	
 	private void refreshUI()
@@ -51,6 +85,8 @@ public class BejeweledPanel extends JPanel implements Observer
 				updateButtonAt(row, column);
 			}
 		}
+
+		updatePoints();
 	}
 	
 	private JPanel createBoardPanel()
@@ -58,7 +94,7 @@ public class BejeweledPanel extends JPanel implements Observer
 		int rows = board.totalRows;
 		int columns = board.totalColumns;
 		
-		GridLayout layout = new GridLayout(rows, columns);
+		GridLayout layout = new GridLayout(rows, columns, 5, 5);
 		JPanel panel = new JPanel(layout);
 		
 		this.buttons = new JButton[rows][columns];
@@ -97,35 +133,43 @@ public class BejeweledPanel extends JPanel implements Observer
 	    {
 			Color.gray, Color.blue, Color.red, 
 			Color.orange, Color.white, Color.green, 
-			Color.pink, Color.yellow
+			Color.decode("#800080"), Color.yellow
 		};
 
 		return colors[piece.ordinal()];
 	}
 	
-	private void clickedButtonAt(int row, int column)
+	private void clickedButtonAt(final int row, final int column)
 	{
 		if(firstClick == null)
 		{
 			firstClick = new Position(row, column);
-			return;
 		}
-		
+		else
+		{
+			//TODO: Remove this hack
+			new Thread()
+			{
+				public void run() 
+				{
+					processMove(row, column);
+					firstClick = null;
+				}
+			}.start();
+		}
+	}
+	
+	private void processMove(int row, int column)
+	{
 		if(checker.canSwap(firstClick.row, firstClick.column, row, column))
 		{
 			board.swapPieces(firstClick.row, firstClick.column, row, column);
-			checker.processRow(firstClick.row);
-			checker.processRow(row);
-			
-			checker.processColumn(firstClick.column);
-			checker.processColumn(column);
+			checker.processBoard();
 		}
 		else
 		{
 			showMessage("Bad Move!");
 		}
-		
-		firstClick = null;		
 	}
 	
 	private void showMessage(String message)
@@ -137,22 +181,36 @@ public class BejeweledPanel extends JPanel implements Observer
 	{
 		Piece piece = board.getPieceAt(row, column);
 		Color buttonColor = getPieceColor(piece);
-		buttons[row][column].setBackground(buttonColor);
+
+		buttons[row][column].setVisible(!piece.equals(Piece.BLANK));
+		buttons[row][column].setBackground(buttonColor);		
 	}
 	
 	public void update(Observable arg0, Object position) 
 	{
-		Position piece = (Position) position;	
-		updateButtonAt(piece.row, piece.column);
-	}
-	
-	public static void main(String[] args) 
-	{
-		BejeweledPanel panel = new BejeweledPanel(6, 6);
-		JFrame frame = new JFrame();
-		frame.setContentPane(panel);
-		frame.setSize(600, 600);
-		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		frame.setVisible(true);
-	}
+		BejeweledEvent event = (BejeweledEvent) position;
+		Position piece = event.piece;
+		
+		switch(event.type)
+		{
+			case PIECE_MOVED:
+				updateButtonAt(piece.row, piece.column);
+			break;
+			
+			case PIECE_DELETED:
+				points += 10;
+				updatePoints();
+			break;
+		}
+		
+		//Pseudo Animation
+		try 
+		{
+			Thread.sleep(50);
+		} 
+		catch (InterruptedException e) 
+		{
+			e.printStackTrace();
+		}
+	}	
 }
